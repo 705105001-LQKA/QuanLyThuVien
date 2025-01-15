@@ -9,8 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 class ThongKeController extends Controller
 {
-    public function thongKe()
+    public function thongKe(Request $request)
     {
+        // Lấy dữ liệu tháng/năm từ request, nếu không có thì lấy tháng/năm hiện tại
+        $monthByDay = $request->input('monthByDay', Carbon::now()->month);
+        $yearByDay = $request->input('yearByDay', Carbon::now()->year);
+
         // Truy vấn top 5 sách được mượn nhiều nhất
         $topBooks = DB::table('lich_su_muon_sach')
             ->select('ma_sach', 'ten_sach', DB::raw('COUNT(*) as total'))
@@ -19,22 +23,19 @@ class ThongKeController extends Controller
             ->limit(5)
             ->get();
 
-        // Thống kê lượt mượn theo ngày trong tháng hiện tại
-        $currentMonth = Carbon::now()->month; // Tháng hiện tại
-        $currentYear = Carbon::now()->year;   // Năm hiện tại
-
+        // Thống kê lượt mượn theo ngày trong tháng/năm được chọn
         $statsByDay = DB::table('lich_su_muon_sach')
             ->select(DB::raw('DATE(ngay_muon) as date'), DB::raw('COUNT(*) as borrow_count'))
-            ->whereMonth('ngay_muon', $currentMonth)
-            ->whereYear('ngay_muon', $currentYear)
+            ->whereMonth('ngay_muon', $monthByDay)
+            ->whereYear('ngay_muon', $yearByDay)
             ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get();
 
-        // Thống kê lượt mượn theo từng tháng trong năm hiện tại
+        // Thống kê lượt mượn theo từng tháng trong năm được chọn
         $statsByMonth = DB::table('lich_su_muon_sach')
             ->select(DB::raw('MONTH(ngay_muon) as month'), DB::raw('COUNT(*) as borrow_count'))
-            ->whereYear('ngay_muon', $currentYear)
+            ->whereYear('ngay_muon', $yearByDay)
             ->groupBy('month')
             ->orderBy('month', 'asc')
             ->get();
